@@ -116,6 +116,31 @@ def test_env():
     })
 
 
+@app.route('/api/debug-tasks', methods=['GET'])
+def debug_tasks():
+    """API: 查看所有任务数据（调试用）"""
+    try:
+        all_tasks = task_manager.get_all_tasks()
+        pending_tasks = [t for t in all_tasks if not t['completed']]
+        completed_tasks = [t for t in all_tasks if t['completed']]
+
+        return jsonify({
+            'success': True,
+            'debug': {
+                'total_tasks': len(all_tasks),
+                'pending_count': len(pending_tasks),
+                'completed_count': len(completed_tasks),
+                'all_tasks': all_tasks,
+                'pending_tasks': pending_tasks
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """API: 获取任务统计信息"""
