@@ -90,8 +90,15 @@ class EmailSender:
             msg.attach(part2)
 
             # 发送邮件
-            server = smtplib.SMTP(self.config['smtp_server'], self.config['smtp_port'])
-            server.starttls()
+            # 根据端口选择连接方式
+            if self.config['smtp_port'] == 465:
+                # 使用SSL
+                server = smtplib.SMTP_SSL(self.config['smtp_server'], self.config['smtp_port'])
+            else:
+                # 使用STARTTLS
+                server = smtplib.SMTP(self.config['smtp_server'], self.config['smtp_port'])
+                server.starttls()
+
             server.login(self.config['sender_email'], self.config['sender_password'])
             server.send_message(msg)
             server.quit()

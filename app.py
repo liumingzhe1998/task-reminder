@@ -99,6 +99,23 @@ def toggle_task(task_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/api/test-env', methods=['GET'])
+def test_env():
+    """API: 测试环境变量配置"""
+    env_info = {
+        'EMAIL_SMTP_SERVER': os.environ.get('EMAIL_SMTP_SERVER', 'NOT_SET'),
+        'EMAIL_SMTP_PORT': os.environ.get('EMAIL_SMTP_PORT', 'NOT_SET'),
+        'EMAIL_SENDER': os.environ.get('EMAIL_SENDER', 'NOT_SET'),
+        'EMAIL_PASSWORD': '***' if os.environ.get('EMAIL_PASSWORD') else 'NOT_SET',
+        'EMAIL_RECIPIENT': os.environ.get('EMAIL_RECIPIENT', 'NOT_SET'),
+        'API_KEY': '***' if os.environ.get('API_KEY') else 'NOT_SET'
+    }
+    return jsonify({
+        'success': True,
+        'env': env_info
+    })
+
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     """API: 获取任务统计信息"""
