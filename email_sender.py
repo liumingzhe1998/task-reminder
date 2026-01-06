@@ -144,23 +144,23 @@ class EmailSender:
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
-        .task-list { margin-top: 20px; }
-        .task-item { background: #f9f9f9; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
-        .task-item.urgent { border-left-color: #ff6b6b; background: #fff5f5; }
-        .task-item.overdue { border-left-color: #dc3545; background: #ffebeb; }
-        .task-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-        .task-desc { color: #666; font-size: 14px; margin: 5px 0; }
-        .countdown { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-top: 8px; }
-        .countdown.normal { background: #d4edda; color: #155724; }
-        .countdown.urgent { background: #fff3cd; color: #856404; }
-        .countdown.overdue { background: #f8d7da; color: #721c24; }
-        .footer { margin-top: 30px; text-align: center; color: #999; font-size: 12px; }
-        .stats { background: #e7f3ff; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; }
-        .user-section { margin-bottom: 30px; }
-        .user-header { background: #f0f0f0; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }}
+        .task-list {{ margin-top: 20px; }}
+        .task-item {{ background: #f9f9f9; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 10px; border-radius: 5px; }}
+        .task-item.urgent {{ border-left-color: #ff6b6b; background: #fff5f5; }}
+        .task-item.overdue {{ border-left-color: #dc3545; background: #ffebeb; }}
+        .task-title {{ font-size: 18px; font-weight: bold; margin-bottom: 5px; }}
+        .task-desc {{ color: #666; font-size: 14px; margin: 5px 0; }}
+        .countdown {{ display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; margin-top: 8px; }}
+        .countdown.normal {{ background: #d4edda; color: #155724; }}
+        .countdown.urgent {{ background: #fff3cd; color: #856404; }}
+        .countdown.overdue {{ background: #f8d7da; color: #721c24; }}
+        .footer {{ margin-top: 30px; text-align: center; color: #999; font-size: 12px; }}
+        .stats {{ background: #e7f3ff; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; }}
+        .user-section {{ margin-bottom: 30px; }}
+        .user-header {{ background: #f0f0f0; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }}
     </style>
 </head>
 <body>
