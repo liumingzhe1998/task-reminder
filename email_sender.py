@@ -21,12 +21,16 @@ class EmailSender:
         """加载邮件配置，优先使用环境变量"""
         # 优先从环境变量读取（用于生产环境如 Render）
         if os.environ.get('EMAIL_SMTP_SERVER'):
+            # 支持多个收件人，用逗号分隔
+            recipients = os.environ.get('EMAIL_RECIPIENTS', 'EMAIL_RECIPIENT')
+            recipient_list = [email.strip() for email in recipients.split(',')]
+
             return {
                 'smtp_server': os.environ.get('EMAIL_SMTP_SERVER'),
                 'smtp_port': int(os.environ.get('EMAIL_SMTP_PORT', '587')),
                 'sender_email': os.environ.get('EMAIL_SENDER'),
                 'sender_password': os.environ.get('EMAIL_PASSWORD'),
-                'recipient_email': os.environ.get('EMAIL_RECIPIENT')
+                'recipients': recipient_list
             }
 
         # 如果没有环境变量，从配置文件读取（用于本地开发）
@@ -40,7 +44,7 @@ class EmailSender:
                 '    "smtp_port": 587,\n'
                 '    "sender_email": "your_email@gmail.com",\n'
                 '    "sender_password": "your_app_password",\n'
-                '    "recipient_email": "your_email@gmail.com"\n'
+                '    "recipients": ["email1@qq.com", "email2@qq.com"]\n'
                 '  }\n'
                 '}'
             )
@@ -51,11 +55,17 @@ class EmailSender:
         if 'email' not in config:
             raise ValueError("配置文件中缺少 'email' 配置项")
 
-        required_fields = ['smtp_server', 'smtp_port', 'sender_email', 'sender_password', 'recipient_email']
+        required_fields = ['smtp_server', 'smtp_port', 'sender_email', 'sender_password', 'recipients']
         for field in required_fields:
             if field not in config['email']:
                 raise ValueError(f"配置文件中缺少必需的邮件配置: {field}")
 
+        # 兼容旧配置格式：如果是字符串，转换为列表
+        recipients = config['email']['recipients']
+        if isinstance(recipients, str):
+            recipients = [recipients]
+
+        config['email']['recipients'] = recipients
         return config['email']
 
     def send_reminder_email(self, tasks):
@@ -77,7 +87,8 @@ class EmailSender:
             msg = MIMEMultipart('alternative')
             msg['Subject'] = Header(f'📋 任务提醒 - 你有{len(tasks)}个未完成任务', 'utf-8')
             msg['From'] = self.config['sender_email']
-            msg['To'] = self.config['recipient_email']
+            # 支持多个收件人
+            msg['To'] = ', '.join(self.config['recipients'])
 
             # 生成邮件内容
             html_content = self._generate_email_html(tasks)
@@ -100,10 +111,11 @@ class EmailSender:
                 server.starttls()
 
             server.login(self.config['sender_email'], self.config['sender_password'])
-            server.send_message(msg)
+            # 使用 sendmail 发送给多个收件人
+            server.sendmail(self.config['sender_email'], self.config['recipients'], msg.as_string())
             server.quit()
 
-            print(f"[成功] 邮件发送成功！收件人: {self.config['recipient_email']}")
+            print(f"[成功] 邮件发送成功！收件人: {', '.join(self.config['recipients'])}")
             return True
 
         except Exception as e:
