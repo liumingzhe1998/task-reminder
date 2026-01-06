@@ -154,23 +154,40 @@ def send_email_reminder():
             })
 
         # 发送邮件
-        email_sender = EmailSender()
-        success = email_sender.send_reminder_email(pending_tasks)
+        try:
+            email_sender = EmailSender()
+            success = email_sender.send_reminder_email(pending_tasks)
 
-        if success:
-            return jsonify({
-                'success': True,
-                'message': f'已发送 {len(pending_tasks)} 个任务的提醒邮件',
-                'sent': True
-            })
-        else:
+            if success:
+                return jsonify({
+                    'success': True,
+                    'message': f'已发送 {len(pending_tasks)} 个任务的提醒邮件',
+                    'sent': True
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': '邮件发送失败'
+                }), 500
+        except Exception as e:
+            # 记录详细的邮件发送错误
+            import traceback
+            error_details = f"{str(e)}\n{traceback.format_exc()}"
+            print(f"邮件发送错误: {error_details}")
             return jsonify({
                 'success': False,
-                'error': '邮件发送失败'
+                'error': f'邮件发送失败: {str(e)}'
             }), 500
 
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        import traceback
+        error_details = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"API错误: {error_details}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'details': error_details
+        }), 500
 
 
 @app.errorhandler(404)
