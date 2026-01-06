@@ -122,8 +122,8 @@ class EmailSender:
 
         # 用户名称映射
         user_names = {
-            'user1': '用户1',
-            'user2': '用户2',
+            'liumingzhe': '刘明哲',
+            'liudi': '刘迪',
             'default': '默认用户'
         }
 
@@ -221,8 +221,8 @@ class EmailSender:
 
         # 用户名称映射
         user_names = {
-            'user1': '用户1',
-            'user2': '用户2',
+            'liumingzhe': '刘明哲',
+            'liudi': '刘迪',
             'default': '默认用户'
         }
 

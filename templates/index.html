@@ -41,8 +41,8 @@
         <div class="user-selector">
             <label for="user-select">👤 选择用户：</label>
             <select id="user-select" class="user-select-dropdown">
-                <option value="user1">用户1</option>
-                <option value="user2">用户2</option>
+                <option value="liumingzhe">刘明哲</option>
+                <option value="liudi">刘迪</option>
             </select>
             <span id="current-user-display" class="current-user-badge"></span>
         </div>
@@ -223,7 +223,7 @@
         // 页面加载时获取任务
         document.addEventListener('DOMContentLoaded', function() {
             // 初始化用户选择
-            const currentUser = localStorage.getItem('task_user_id') || 'user1';
+            const currentUser = localStorage.getItem('task_user_id') || 'liumingzhe';
             document.getElementById('user-select').value = currentUser;
             updateUserDisplay(currentUser);
 
@@ -248,8 +248,8 @@
         function updateUserDisplay(userId) {
             const display = document.getElementById('current-user-display');
             const userNames = {
-                'user1': '用户1',
-                'user2': '用户2'
+                'liumingzhe': '刘明哲',
+                'liudi': '刘迪'
             };
             display.textContent = `当前: ${userNames[userId]}`;
         }
