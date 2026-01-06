@@ -374,7 +374,8 @@
         // 加载统计信息
         async function loadStats() {
             try {
-                const response = await fetch('/api/stats');
+                const userId = getCurrentUserId();
+                const response = await fetch(`/api/stats?user_id=${userId}`);
                 const data = await response.json();
 
                 if (data.success) {

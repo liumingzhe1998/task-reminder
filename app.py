@@ -149,7 +149,8 @@ def debug_tasks():
 def get_stats():
     """API: 获取任务统计信息"""
     try:
-        all_tasks = task_manager.get_all_tasks()
+        user_id = request.args.get('user_id')
+        all_tasks = task_manager.get_all_tasks(user_id)
         pending_tasks = [t for t in all_tasks if not t['completed']]
         completed_tasks = [t for t in all_tasks if t['completed']]
 

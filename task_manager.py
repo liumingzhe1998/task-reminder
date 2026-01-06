@@ -17,6 +17,23 @@ class TaskManager:
         """初始化数据文件"""
         if not self.data_file.exists():
             self._save_data({'tasks': []})
+        else:
+            # 迁移旧数据：给没有user_id的任务添加user_id
+            self._migrate_old_data()
+
+    def _migrate_old_data(self):
+        """迁移旧数据，给没有user_id的任务添加默认user_id"""
+        data = self._load_data()
+        tasks = data.get('tasks', [])
+        updated = False
+
+        for task in tasks:
+            if 'user_id' not in task:
+                task['user_id'] = 'liumingzhe'  # 默认分配给刘明哲
+                updated = True
+
+        if updated:
+            self._save_data(data)
 
     def _load_data(self):
         """从文件加载数据"""
@@ -81,7 +98,8 @@ class TaskManager:
 
         # 如果指定了用户ID，只返回该用户的任务
         if user_id:
-            tasks = [t for t in tasks if t.get('user_id') == user_id]
+            # 同时匹配有user_id的任务和没有user_id的旧任务
+            tasks = [t for t in tasks if t.get('user_id') == user_id or 'user_id' not in t]
 
         return tasks
 
