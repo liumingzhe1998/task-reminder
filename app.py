@@ -18,17 +18,20 @@ task_manager = TaskManager()
 def index():
     """主页 - 显示所有任务"""
     try:
-        tasks = task_manager.get_tasks_with_countdown()
-        return render_template('index.html', tasks=tasks)
+        # 获取当前用户ID
+        user_id = request.args.get('user', 'default')
+        tasks = task_manager.get_tasks_with_countdown(user_id)
+        return render_template('index.html', tasks=tasks, current_user=user_id)
     except Exception as e:
-        return render_template('index.html', tasks=[], error=str(e))
+        return render_template('index.html', tasks=[], error=str(e), current_user='default')
 
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():
     """API: 获取所有任务"""
     try:
-        tasks = task_manager.get_tasks_with_countdown()
+        user_id = request.args.get('user_id', 'default')
+        tasks = task_manager.get_tasks_with_countdown(user_id)
         return jsonify({'success': True, 'tasks': tasks})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -47,6 +50,7 @@ def add_task():
         title = data['title'].strip()
         description = data.get('description', '').strip()
         deadline = data['deadline'].strip()
+        user_id = data.get('user_id', 'default')
 
         if not title:
             return jsonify({'success': False, 'error': '任务标题不能为空'}), 400
@@ -55,7 +59,7 @@ def add_task():
             return jsonify({'success': False, 'error': '截止日期不能为空'}), 400
 
         # 添加任务
-        task_id = task_manager.add_task(title, description, deadline)
+        task_id = task_manager.add_task(title, description, deadline, user_id)
 
         return jsonify({
             'success': True,
@@ -184,8 +188,8 @@ def send_email_reminder():
         # 导入邮件发送模块
         from email_sender import EmailSender
 
-        # 获取所有未完成的任务
-        tasks_with_countdown = task_manager.get_tasks_with_countdown()
+        # 获取所有用户的任务（不按用户过滤）
+        tasks_with_countdown = task_manager.get_tasks_with_countdown(user_id=None)
         pending_tasks = [t for t in tasks_with_countdown if not t['completed']]
 
         if not pending_tasks:

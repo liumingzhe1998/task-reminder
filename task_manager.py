@@ -31,7 +31,7 @@ class TaskManager:
         with open(self.data_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
 
-    def add_task(self, title, description, deadline):
+    def add_task(self, title, description, deadline, user_id='default'):
         """
         添加新任务
 
@@ -39,6 +39,7 @@ class TaskManager:
             title: 任务标题
             description: 任务描述
             deadline: 截止日期 (格式: YYYY-MM-DD)
+            user_id: 用户ID (默认为 'default')
 
         Returns:
             新创建的任务ID
@@ -57,17 +58,32 @@ class TaskManager:
             'description': description,
             'deadline': deadline,
             'created_at': datetime.now().strftime('%Y-%m-%d'),
-            'completed': False
+            'completed': False,
+            'user_id': user_id  # 添加用户ID
         }
 
         data['tasks'].append(task)
         self._save_data(data)
         return task['id']
 
-    def get_all_tasks(self):
-        """获取所有任务"""
+    def get_all_tasks(self, user_id=None):
+        """
+        获取所有任务（可选按用户过滤）
+
+        Args:
+            user_id: 用户ID，如果提供则只返回该用户的任务
+
+        Returns:
+            任务列表
+        """
         data = self._load_data()
-        return data.get('tasks', [])
+        tasks = data.get('tasks', [])
+
+        # 如果指定了用户ID，只返回该用户的任务
+        if user_id:
+            tasks = [t for t in tasks if t.get('user_id') == user_id]
+
+        return tasks
 
     def get_task_by_id(self, task_id):
         """根据ID获取任务"""
@@ -166,12 +182,15 @@ class TaskManager:
                 'text': '未知'
             }
 
-    def get_tasks_with_countdown(self):
+    def get_tasks_with_countdown(self, user_id=None):
         """
         获取所有任务及其倒计时信息
         按紧急程度排序（即将到期的在前）
+
+        Args:
+            user_id: 用户ID，如果提供则只返回该用户的任务
         """
-        tasks = self.get_all_tasks()
+        tasks = self.get_all_tasks(user_id)
         tasks_with_countdown = []
 
         for task in tasks:

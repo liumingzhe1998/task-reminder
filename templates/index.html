@@ -37,6 +37,16 @@
             </button>
         </header>
 
+        <!-- 用户选择器 -->
+        <div class="user-selector">
+            <label for="user-select">👤 选择用户：</label>
+            <select id="user-select" class="user-select-dropdown">
+                <option value="user1">用户1</option>
+                <option value="user2">用户2</option>
+            </select>
+            <span id="current-user-display" class="current-user-badge"></span>
+        </div>
+
         <!-- 统计信息 -->
         <div class="stats-container" id="stats">
             <div class="stat-item">
@@ -212,6 +222,20 @@
         // ========== 应用功能 ==========
         // 页面加载时获取任务
         document.addEventListener('DOMContentLoaded', function() {
+            // 初始化用户选择
+            const currentUser = localStorage.getItem('task_user_id') || 'user1';
+            document.getElementById('user-select').value = currentUser;
+            updateUserDisplay(currentUser);
+
+            // 监听用户切换
+            document.getElementById('user-select').addEventListener('change', function() {
+                const newUser = this.value;
+                localStorage.setItem('task_user_id', newUser);
+                updateUserDisplay(newUser);
+                loadTasks();
+                loadStats();
+            });
+
             loadTasks();
             loadStats();
 
@@ -220,6 +244,21 @@
             document.getElementById('deadline').setAttribute('min', today);
         });
 
+        // 更新用户显示
+        function updateUserDisplay(userId) {
+            const display = document.getElementById('current-user-display');
+            const userNames = {
+                'user1': '用户1',
+                'user2': '用户2'
+            };
+            display.textContent = `当前: ${userNames[userId]}`;
+        }
+
+        // 获取当前用户ID
+        function getCurrentUserId() {
+            return document.getElementById('user-select').value;
+        };
+
         // 表单提交处理
         document.getElementById('task-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -227,6 +266,7 @@
             const title = document.getElementById('title').value.trim();
             const description = document.getElementById('description').value.trim();
             const deadline = document.getElementById('deadline').value;
+            const userId = getCurrentUserId();
 
             if (!title || !deadline) {
                 alert('请填写任务标题和截止日期');
@@ -242,7 +282,8 @@
                     body: JSON.stringify({
                         title: title,
                         description: description,
-                        deadline: deadline
+                        deadline: deadline,
+                        user_id: userId
                     })
                 });
 
@@ -267,7 +308,8 @@
         // 加载任务列表
         async function loadTasks() {
             try {
-                const response = await fetch('/api/tasks');
+                const userId = getCurrentUserId();
+                const response = await fetch(`/api/tasks?user_id=${userId}`);
                 const data = await response.json();
 
                 if (data.success) {

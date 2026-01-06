@@ -36,6 +36,55 @@ header h1 {
     opacity: 0.9;
 }
 
+/* 用户选择器 */
+.user-selector {
+    background: white;
+    padding: 15px 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.user-selector label {
+    font-weight: 600;
+    color: #555;
+    font-size: 1em;
+}
+
+.user-select-dropdown {
+    padding: 8px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.3s;
+    flex: 1;
+    max-width: 200px;
+}
+
+.user-select-dropdown:hover {
+    border-color: #667eea;
+}
+
+.user-select-dropdown:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.current-user-badge {
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
 /* 手动安装按钮 */
 .install-prompt-btn {
     margin-top: 15px;

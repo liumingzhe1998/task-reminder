@@ -112,6 +112,21 @@ class EmailSender:
 
     def _generate_email_html(self, tasks):
         """生成HTML格式的邮件内容"""
+        # 按用户分组任务
+        user_tasks = {}
+        for task in tasks:
+            user_id = task.get('user_id', 'default')
+            if user_id not in user_tasks:
+                user_tasks[user_id] = []
+            user_tasks[user_id].append(task)
+
+        # 用户名称映射
+        user_names = {
+            'user1': '用户1',
+            'user2': '用户2',
+            'default': '默认用户'
+        }
+
         html = """<!DOCTYPE html>
 <html>
 <head>
@@ -132,41 +147,53 @@ class EmailSender:
         .countdown.overdue { background: #f8d7da; color: #721c24; }
         .footer { margin-top: 30px; text-align: center; color: #999; font-size: 12px; }
         .stats { background: #e7f3ff; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; }
+        .user-section { margin-bottom: 30px; }
+        .user-header { background: #f0f0f0; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📋 任务提醒</h1>
-            <p>今日待办任务清单</p>
+            <p>多用户任务清单</p>
         </div>
 
         <div class="stats">
-            <strong>你有 {task_count} 个未完成任务</strong>
+            <strong>共 {task_count} 个未完成任务，{user_count} 个用户</strong>
         </div>
 
         <div class="task-list">
-        """.format(task_count=len(tasks))
+        """.format(task_count=len(tasks), user_count=len(user_tasks))
 
-        for task in tasks:
-            countdown = task.get('countdown', {})
-            status_class = countdown.get('status', 'normal')
-            countdown_text = countdown.get('text', '未知')
+        # 按用户显示任务
+        for user_id, user_task_list in user_tasks.items():
+            user_name = user_names.get(user_id, user_id)
+            html += f"""
+            <div class="user-section">
+                <div class="user-header">👤 {user_name} ({len(user_task_list)} 个任务)</div>
+            """
 
-            html += """
-            <div class="task-item {status_class}">
-                <div class="task-title">{title}</div>
-                <div class="task-desc">{desc}</div>
-                <div class="countdown {status_class}">{countdown_text}</div>
-                <div style="font-size: 12px; color: #999; margin-top: 5px;">截止日期: {deadline}</div>
-            </div>
-            """.format(
-                status_class=status_class,
-                title=task.get('title', '无标题'),
-                desc=task.get('description', '无描述'),
-                countdown_text=countdown_text,
-                deadline=task.get('deadline', '未知')
-            )
+            for task in user_task_list:
+                countdown = task.get('countdown', {})
+                status_class = countdown.get('status', 'normal')
+                countdown_text = countdown.get('text', '未知')
+
+                html += """
+                <div class="task-item {status_class}">
+                    <div class="task-title">{title}</div>
+                    <div class="task-desc">{desc}</div>
+                    <div class="countdown {status_class}">{countdown_text}</div>
+                    <div style="font-size: 12px; color: #999; margin-top: 5px;">截止日期: {deadline}</div>
+                </div>
+                """.format(
+                    status_class=status_class,
+                    title=task.get('title', '无标题'),
+                    desc=task.get('description', '无描述'),
+                    countdown_text=countdown_text,
+                    deadline=task.get('deadline', '未知')
+                )
+
+            html += " </div>"
 
         html += """
         </div>
@@ -184,16 +211,38 @@ class EmailSender:
 
     def _generate_email_text(self, tasks):
         """生成纯文本格式的邮件内容"""
-        text = f"任务提醒 - 你有{len(tasks)}个未完成任务\n"
+        # 按用户分组任务
+        user_tasks = {}
+        for task in tasks:
+            user_id = task.get('user_id', 'default')
+            if user_id not in user_tasks:
+                user_tasks[user_id] = []
+            user_tasks[user_id].append(task)
+
+        # 用户名称映射
+        user_names = {
+            'user1': '用户1',
+            'user2': '用户2',
+            'default': '默认用户'
+        }
+
+        text = f"任务提醒 - 多用户任务清单\n"
+        text += f"共 {len(tasks)} 个未完成任务，{len(user_tasks)} 个用户\n"
         text += "=" * 50 + "\n\n"
 
-        for task in tasks:
-            countdown = task.get('countdown', {})
-            text += f"标题: {task.get('title', '无标题')}\n"
-            text += f"描述: {task.get('description', '无描述')}\n"
-            text += f"截止日期: {task.get('deadline', '未知')}\n"
-            text += f"状态: {countdown.get('text', '未知')}\n"
+        # 按用户显示任务
+        for user_id, user_task_list in user_tasks.items():
+            user_name = user_names.get(user_id, user_id)
+            text += f"\n【{user_name}】({len(user_task_list)} 个任务)\n"
             text += "-" * 50 + "\n"
+
+            for task in user_task_list:
+                countdown = task.get('countdown', {})
+                text += f"标题: {task.get('title', '无标题')}\n"
+                text += f"描述: {task.get('description', '无描述')}\n"
+                text += f"截止日期: {task.get('deadline', '未知')}\n"
+                text += f"状态: {countdown.get('text', '未知')}\n"
+                text += "-" * 30 + "\n"
 
         text += "\n" + "=" * 50 + "\n"
         text += "这是一封自动发送的邮件，请勿回复。\n"
