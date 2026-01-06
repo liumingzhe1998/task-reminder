@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务提醒系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="任务提醒">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon-192.png') }}">
+</head>
+<body>
+    <!-- PWA 安装提示 -->
+    <div id="pwa-install-prompt" class="pwa-install-banner" style="display: none;">
+        <div class="pwa-install-content">
+            <div class="pwa-install-text">
+                <div class="pwa-install-icon">📲</div>
+                <div>
+                    <div class="pwa-install-title">安装应用</div>
+                    <div class="pwa-install-desc">添加到主屏幕，获得更好的体验</div>
+                </div>
+            </div>
+            <button id="pwa-install-btn" class="pwa-install-button">安装</button>
+            <button id="pwa-install-close" class="pwa-install-close">✕</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>📋 任务提醒系统</h1>
+            <p class="subtitle">管理您的任务，永不错过重要事项</p>
+            <button id="manual-install-btn" class="install-prompt-btn" style="display: none;">
+                📱 安装应用
+            </button>
+        </header>
+
+        <!-- 统计信息 -->
+        <div class="stats-container" id="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="total-tasks">0</div>
+                <div class="stat-label">总任务</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="pending-tasks">0</div>
+                <div class="stat-label">进行中</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="urgent-tasks">0</div>
+                <div class="stat-label">紧急</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="completed-tasks">0</div>
+                <div class="stat-label">已完成</div>
+            </div>
+        </div>
+
+        <!-- 添加任务表单 -->
+        <div class="form-container">
+            <h2>➕ 添加新任务</h2>
+            <form id="task-form">
+                <div class="form-group">
+                    <label for="title">任务标题 *</label>
+                    <input type="text" id="title" name="title" placeholder="输入任务标题" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">任务描述</label>
+                    <textarea id="description" name="description" rows="3" placeholder="输入任务详细描述（可选）"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="deadline">截止日期 *</label>
+                    <input type="date" id="deadline" name="deadline" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-icon">➕</span>
+                    添加任务
+                </button>
+            </form>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="tasks-container">
+            <div class="tasks-header">
+                <h2>📝 任务列表</h2>
+                <button class="btn btn-secondary" onclick="refreshTasks()">
+                    <span class="btn-icon">🔄</span>
+                    刷新
+                </button>
+            </div>
+
+            <div id="tasks-list" class="tasks-list">
+                <!-- 任务将在这里动态显示 -->
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <p>暂无任务</p>
+                    <p class="empty-hint">添加您的第一个任务吧！</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== PWA 功能 ==========
+        // 注册 Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker 注册成功:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('ServiceWorker 注册失败:', error);
+                    });
+            });
+        }
+
+        // PWA 安装提示
+        let deferredPrompt;
+        const installBanner = document.getElementById('pwa-install-prompt');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const closeBtn = document.getElementById('pwa-install-close');
+        const manualInstallBtn = document.getElementById('manual-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 阻止默认的安装提示
+            e.preventDefault();
+            // 保存事件供后续使用
+            deferredPrompt = e;
+
+            // 显示安装横幅
+            installBanner.style.display = 'block';
+
+            // 显示手动安装按钮（作为备选）
+            if (manualInstallBtn) {
+                manualInstallBtn.style.display = 'inline-flex';
+            }
+
+            console.log('检测到可以安装 PWA');
+        });
+
+        // 横幅安装按钮点击事件
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('用户接受了安装提示');
+                }
+                deferredPrompt = null;
+                installBanner.style.display = 'none';
+                if (manualInstallBtn) {
+                    manualInstallBtn.style.display = 'none';
+                }
+            }
+        });
+
+        // 手动安装按钮点击事件
+        if (manualInstallBtn) {
+            manualInstallBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        console.log('用户接受了安装提示');
+                        alert('安装成功！在主屏幕找到应用图标');
+                    } else {
+                        console.log('用户拒绝了安装');
+                    }
+                    deferredPrompt = null;
+                    installBanner.style.display = 'none';
+                    manualInstallBtn.style.display = 'none';
+                } else {
+                    alert('您的浏览器不支持 PWA 安装，请使用 Chrome 浏览器');
+                }
+            });
+        }
+
+        closeBtn.addEventListener('click', () => {
+            installBanner.style.display = 'none';
+            // 不隐藏手动安装按钮，让用户还可以手动安装
+        });
+
+        // 检测应用是否已安装
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+            if (manualInstallBtn) {
+                manualInstallBtn.style.display = 'none';
+            }
+            console.log('应用已安装到主屏幕');
+            alert('应用已成功安装到主屏幕！');
+        });
+
+        // iOS 设备提示（iOS 不支持 beforeinstallprompt）
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS && !window.localStorage.getItem('ios-install-prompt-shown')) {
+            setTimeout(() => {
+                installBanner.style.display = 'block';
+                installBtn.textContent = '查看说明';
+                installBtn.onclick = () => {
+                    alert('在 iOS 上安装此应用:\n\n1. 点击底部的分享按钮\n2. 向下滚动并点击"添加到主屏幕"\n3. 点击"添加"按钮');
+                    installBanner.style.display = 'none';
+                    window.localStorage.setItem('ios-install-prompt-shown', 'true');
+                };
+            }, 2000);
+        }
+
+        // ========== 应用功能 ==========
+        // 页面加载时获取任务
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTasks();
+            loadStats();
+
+            // 设置日期选择器的最小值为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('deadline').setAttribute('min', today);
+        });
+
+        // 表单提交处理
+        document.getElementById('task-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const deadline = document.getElementById('deadline').value;
+
+            if (!title || !deadline) {
+                alert('请填写任务标题和截止日期');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description,
+                        deadline: deadline
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 清空表单
+                    document.getElementById('task-form').reset();
+                    // 重新加载任务列表
+                    loadTasks();
+                    loadStats();
+                    alert('任务添加成功！');
+                } else {
+                    alert('添加失败: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('添加任务时出错: ' + error.message);
+            }
+        });
+
+        // 加载任务列表
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayTasks(data.tasks);
+                } else {
+                    console.error('加载任务失败:', data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // 显示任务列表
+        function displayTasks(tasks) {
+            const tasksList = document.getElementById('tasks-list');
+
+            if (tasks.length === 0) {
+                tasksList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>暂无任务</p>
+                        <p class="empty-hint">添加您的第一个任务吧！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tasksList.innerHTML = tasks.map(task => {
+                const countdown = task.countdown || {};
+                const statusClass = countdown.status || 'normal';
+                const completedClass = task.completed ? 'completed' : '';
+                const checkedAttr = task.completed ? 'checked' : '';
+
+                return `
+                    <div class="task-item ${statusClass} ${completedClass}" data-id="${task.id}">
+                        <div class="task-header">
+                            <div class="task-left">
+                                <input type="checkbox" ${checkedAttr} onchange="toggleTask('${task.id}')">
+                                <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                            </div>
+                            <div class="countdown ${statusClass}">
+                                ${escapeHtml(countdown.text || '未知')}
+                            </div>
+                        </div>
+
+                        ${task.description ? `<p class="task-description">${escapeHtml(task.description)}</p>` : ''}
+
+                        <div class="task-footer">
+                            <div class="task-deadline">
+                                <span class="icon">📅</span>
+                                截止日期: ${escapeHtml(task.deadline)}
+                            </div>
+                            <button class="btn-delete" onclick="deleteTask('${task.id}')">
+                                <span>🗑️</span> 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 加载统计信息
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('total-tasks').textContent = data.stats.total;
+                    document.getElementById('pending-tasks').textContent = data.stats.pending;
+                    document.getElementById('urgent-tasks').textContent = data.stats.urgent;
+                    document.getElementById('completed-tasks').textContent = data.stats.completed;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // 删除任务
+        async function deleteTask(taskId) {
+            if (!confirm('确定要删除这个任务吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    loadTasks();
+                    loadStats();
+                    alert('任务删除成功！');
+                } else {
+                    alert('删除失败: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('删除任务时出错: ' + error.message);
+            }
+        }
+
+        // 切换任务完成状态
+        async function toggleTask(taskId) {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/toggle`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    loadTasks();
+                    loadStats();
+                } else {
+                    alert('操作失败: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('操作时出错: ' + error.message);
+            }
+        }
+
+        // 刷新任务列表
+        function refreshTasks() {
+            loadTasks();
+            loadStats();
+        }
+
+        // HTML转义函数，防止XSS攻击
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
